@@ -21,30 +21,30 @@ RUN docker-php-ext-install pdo_mysql pdo_sqlite mbstring exif pcntl bcmath gd
 # Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Set working directory
-WORKDIR /var/www
+# Set working directory to match Render's path
+WORKDIR /opt/render/project/src
 
 # Copy existing application directory contents
-COPY . /var/www
+COPY . /opt/render/project/src
 
 # Install dependencies
 RUN composer install --optimize-autoloader --no-dev
 
 # Create SQLite database directory and set permissions
-RUN mkdir -p /var/www/database && \
-    touch /var/www/database/database.sqlite && \
-    chmod -R 777 /var/www/storage && \
-    chmod -R 777 /var/www/bootstrap/cache && \
-    chmod -R 777 /var/www/database && \
-    chmod 666 /var/www/database/database.sqlite
+RUN mkdir -p /opt/render/project/src/database && \
+    touch /opt/render/project/src/database/database.sqlite && \
+    chmod -R 777 /opt/render/project/src/storage && \
+    chmod -R 777 /opt/render/project/src/bootstrap/cache && \
+    chmod -R 777 /opt/render/project/src/database && \
+    chmod 666 /opt/render/project/src/database/database.sqlite
 
 # Expose port
 EXPOSE $PORT
 
 # Start server
-CMD mkdir -p /var/www/database && \
-    touch /var/www/database/database.sqlite && \
-    chmod -R 777 /var/www/database && \
+CMD mkdir -p /opt/render/project/src/database && \
+    touch /opt/render/project/src/database/database.sqlite && \
+    chmod -R 777 /opt/render/project/src/database && \
     php artisan migrate --force && \
     php artisan db:seed --force && \
     php artisan storage:link && \
