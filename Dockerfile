@@ -27,8 +27,8 @@ WORKDIR /opt/render/project/src
 # Copy existing application directory contents
 COPY . /opt/render/project/src
 
-# Install dependencies
-RUN composer install --optimize-autoloader --no-dev
+# Install dependencies (include dev for seeders)
+RUN composer install --optimize-autoloader
 
 # Create SQLite database directory and set permissions
 RUN mkdir -p /opt/render/project/src/database && \
