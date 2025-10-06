@@ -42,10 +42,9 @@ RUN mkdir -p /var/www/database && \
 EXPOSE $PORT
 
 # Start server
-CMD touch /var/www/database/database.sqlite && \
-    chmod 666 /var/www/database/database.sqlite && \
-    php artisan config:cache && \
-    php artisan route:cache && \
+CMD mkdir -p /var/www/database && \
+    touch /var/www/database/database.sqlite && \
+    chmod -R 777 /var/www/database && \
     php artisan migrate --force && \
     php artisan db:seed --force && \
     php artisan storage:link && \

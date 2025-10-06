@@ -1,1 +1,4 @@
-*.sqlite*
+*.sqlite-shm
+*.sqlite-wal
+# Allow database.sqlite to be committed for deployment
+# *.sqlite*
