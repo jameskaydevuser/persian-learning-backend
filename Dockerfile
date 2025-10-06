@@ -43,10 +43,7 @@ EXPOSE $PORT
 
 # Start server
 CMD mkdir -p /opt/render/project/src/database && \
-    touch /opt/render/project/src/database/database.sqlite && \
     chmod -R 777 /opt/render/project/src/database && \
-    php artisan migrate --force && \
-    php artisan db:seed --force && \
     php artisan storage:link && \
     php artisan serve --host=0.0.0.0 --port=${PORT:-8000}
 
