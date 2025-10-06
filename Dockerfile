@@ -30,18 +30,21 @@ COPY . /var/www
 # Install dependencies
 RUN composer install --optimize-autoloader --no-dev
 
-# Create SQLite database directory
+# Create SQLite database directory and set permissions
 RUN mkdir -p /var/www/database && \
     touch /var/www/database/database.sqlite && \
-    chmod -R 775 /var/www/storage && \
-    chmod -R 775 /var/www/bootstrap/cache && \
-    chmod 664 /var/www/database/database.sqlite
+    chmod -R 777 /var/www/storage && \
+    chmod -R 777 /var/www/bootstrap/cache && \
+    chmod -R 777 /var/www/database && \
+    chmod 666 /var/www/database/database.sqlite
 
 # Expose port
 EXPOSE $PORT
 
 # Start server
-CMD php artisan config:cache && \
+CMD touch /var/www/database/database.sqlite && \
+    chmod 666 /var/www/database/database.sqlite && \
+    php artisan config:cache && \
     php artisan route:cache && \
     php artisan migrate --force && \
     php artisan db:seed --force && \
