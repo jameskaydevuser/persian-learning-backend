@@ -82,3 +82,24 @@ Route::middleware(['auth:sanctum'])->group(function () {
 // Public routes for children to access parent audio
 Route::get('/audio/parent/{wordId}', [ParentAudioController::class, 'getForChildren']);
 Route::get('/audio/file/{filename}', [ParentAudioController::class, 'streamAudio']);
+
+// Debug routes to check database
+Route::get('/debug/tables', function() {
+    $tables = DB::select("SELECT name FROM sqlite_master WHERE type='table'");
+    return response()->json([
+        'tables' => $tables,
+        'users_count' => App\Models\User::count(),
+        'categories_count' => App\Models\Category::count(),
+        'words_count' => App\Models\Word::count(),
+        'parent_audio_count' => App\Models\ParentAudio::count(),
+        'parent_sentences_count' => App\Models\ParentSentence::count(),
+    ]);
+});
+
+Route::get('/debug/users', function() {
+    return response()->json(App\Models\User::all());
+});
+
+Route::get('/debug/parent-audio', function() {
+    return response()->json(App\Models\ParentAudio::with(['parent', 'word'])->get());
+});
