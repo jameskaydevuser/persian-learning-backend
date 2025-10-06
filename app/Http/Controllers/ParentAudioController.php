@@ -142,9 +142,7 @@ class ParentAudioController extends Controller
 
         if ($parentAudio) {
             // Generate the API URL for the audio file
-            // For real device on different network, use ngrok URL
-            $baseUrl = 'https://moody-faithlessly-aleigha.ngrok-free.dev';
-            // For emulator, use: 'http://10.0.2.2:8000'
+            $baseUrl = env('APP_URL', 'https://persian-learning-backend.onrender.com');
             $audioUrl = $baseUrl . '/api/audio/file/' . $parentAudio->audio_file_name;
             
             return response()->json([
