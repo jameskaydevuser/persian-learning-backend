@@ -236,11 +236,22 @@ class ParentAudioController extends Controller
             ], 404);
         }
         
-        \Log::info('Streaming audio file');
+        // Determine content type based on file extension
+        $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        $contentType = match($extension) {
+            'mp3' => 'audio/mpeg',
+            'wav' => 'audio/wav',
+            'm4a' => 'audio/mp4',
+            'aac' => 'audio/aac',
+            default => 'audio/mpeg'
+        };
+        
+        \Log::info('Streaming audio file', ['contentType' => $contentType]);
         
         return response()->file($fullPath, [
-            'Content-Type' => 'audio/wav',
+            'Content-Type' => $contentType,
             'Accept-Ranges' => 'bytes',
+            'Cache-Control' => 'public, max-age=3600',
         ]);
     }
 }
