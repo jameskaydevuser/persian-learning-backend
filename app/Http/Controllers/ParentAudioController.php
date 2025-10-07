@@ -248,17 +248,15 @@ class ParentAudioController extends Controller
         
         \Log::info('Streaming audio file', ['contentType' => $contentType, 'extension' => $extension]);
         
-        // Force the correct headers
-        $headers = [
+        // Try using Storage facade to serve the file
+        return response()->stream(function() use ($fullPath) {
+            $file = fopen($fullPath, 'rb');
+            fpassthru($file);
+            fclose($file);
+        }, 200, [
             'Content-Type' => $contentType,
             'Accept-Ranges' => 'bytes',
             'Cache-Control' => 'public, max-age=3600',
-            'Content-Disposition' => 'inline',
-        ];
-        
-        \Log::info('Sending file with headers', $headers);
-        
-        // Try using download method with proper headers
-        return response()->download($fullPath, $filename, $headers);
+        ]);
     }
 }
