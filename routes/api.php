@@ -81,7 +81,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 // Public routes for children to access parent audio
 Route::get('/audio/parent/{wordId}', [ParentAudioController::class, 'getForChildren']);
-Route::get('/audio/file/{filename}', [ParentAudioController::class, 'streamAudio']);
 
 // Debug routes to check database
 Route::get('/debug/tables', function() {

@@ -73,9 +73,9 @@ class ParentAudioController extends Controller
             ->first();
 
         if ($parentAudio) {
-            // Generate the API URL for the audio file
+            // Generate the direct storage URL for the audio file
             $baseUrl = env('APP_URL', 'https://persian-learning-backend.onrender.com');
-            $audioUrl = $baseUrl . '/api/audio/file/' . $parentAudio->audio_file_name;
+            $audioUrl = $baseUrl . '/storage/parent-audio/' . $parentAudio->audio_file_name;
             
             return response()->json([
                 'success' => true,
@@ -151,44 +151,4 @@ class ParentAudioController extends Controller
         ]);
     }
 
-    public function streamAudio($filename)
-    {
-        \Log::info('Stream audio request received', ['filename' => $filename]);
-        
-        $filePath = 'parent-audio/' . $filename;
-        
-        // Check if file exists using Storage facade
-        if (!\Storage::disk('public')->exists($filePath)) {
-            \Log::error('Audio file not found', ['filePath' => $filePath]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Audio file not found'
-            ], 404);
-        }
-        
-        // Determine content type based on file extension
-        $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-        $contentType = match($extension) {
-            'mp3' => 'audio/mpeg',
-            'wav' => 'audio/wav',
-            'm4a' => 'audio/mp4',
-            'aac' => 'audio/aac',
-            default => 'audio/mpeg'
-        };
-        
-        \Log::info('Streaming audio file', ['contentType' => $contentType, 'extension' => $extension]);
-        
-        // Approach 5: Using raw PHP file serving
-        $fullPath = storage_path('app/public/' . $filePath);
-        
-        // Set headers manually
-        header('Content-Type: ' . $contentType);
-        header('Content-Length: ' . filesize($fullPath));
-        header('Accept-Ranges: bytes');
-        header('Cache-Control: public, max-age=3600');
-        
-        // Read and output file
-        readfile($fullPath);
-        exit;
-    }
 }
