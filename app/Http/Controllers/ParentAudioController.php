@@ -246,12 +246,14 @@ class ParentAudioController extends Controller
             default => 'audio/mpeg'
         };
         
-        \Log::info('Streaming audio file', ['contentType' => $contentType]);
+        \Log::info('Streaming audio file', ['contentType' => $contentType, 'extension' => $extension]);
         
+        // Force the correct headers
         return response()->file($fullPath, [
             'Content-Type' => $contentType,
             'Accept-Ranges' => 'bytes',
             'Cache-Control' => 'public, max-age=3600',
+            'Content-Disposition' => 'inline',
         ]);
     }
 }
