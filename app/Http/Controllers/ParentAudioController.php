@@ -14,126 +14,53 @@ class ParentAudioController extends Controller
 {
     public function store(Request $request): JsonResponse
     {
-        // Check if it's a base64 upload or file upload
-        if ($request->has('audio_base64')) {
-            $request->validate([
-                'word_id' => 'required|exists:words,id',
-                'difficulty' => 'required|in:easy,normal,hard',
-                'audio_base64' => 'required|string',
-                'duration_seconds' => 'nullable|integer',
-            ]);
+        // Only handle direct file uploads - no base64
+        $request->validate([
+            'word_id' => 'required|exists:words,id',
+            'difficulty' => 'required|in:easy,normal,hard',
+            'audio_file' => 'required|file|mimes:mp3,wav,m4a|max:10240', // 10MB max
+            'duration_seconds' => 'nullable|integer',
+        ]);
 
-            $parentId = Auth::id();
-            $wordId = $request->word_id;
-            $difficulty = $request->difficulty;
+        $parentId = Auth::id();
+        $wordId = $request->word_id;
+        $difficulty = $request->difficulty;
 
-            // Check if audio already exists for this parent/word/difficulty
-            $existingAudio = ParentAudio::where('parent_id', $parentId)
-                ->where('word_id', $wordId)
-                ->where('difficulty', $difficulty)
-                ->first();
+        // Check if audio already exists for this parent/word/difficulty
+        $existingAudio = ParentAudio::where('parent_id', $parentId)
+            ->where('word_id', $wordId)
+            ->where('difficulty', $difficulty)
+            ->first();
 
-            if ($existingAudio) {
-                // Delete old audio file
-                Storage::disk('public')->delete($existingAudio->audio_file_path);
-                $existingAudio->delete();
-            }
-
-            // Decode base64 and store the audio file
-            $base64Data = $request->audio_base64;
-            
-            // Remove data URL prefix if present
-            if (strpos($base64Data, 'data:') === 0) {
-                $base64Data = substr($base64Data, strpos($base64Data, ',') + 1);
-            }
-            
-            $audioData = base64_decode($base64Data);
-            
-            \Log::info('Audio data info', [
-                'base64_length' => strlen($request->audio_base64),
-                'decoded_length' => strlen($audioData),
-                'first_4_bytes' => bin2hex(substr($audioData, 0, 4)),
-                'is_wav' => substr($audioData, 0, 4) === 'RIFF'
-            ]);
-            
-            // Don't manipulate the audio data - store it as-is
-            // The client should send properly formatted audio
-            
-            // Determine file extension based on actual format
-            $extension = 'wav'; // Default
-            if (substr($audioData, 0, 4) === 'RIFF') {
-                $extension = 'wav';
-            } elseif (substr($audioData, 0, 3) === 'ID3' || substr($audioData, 0, 2) === "\xFF\xFB") {
-                $extension = 'mp3';
-            }
-            
-            $fileName = Str::uuid() . '.' . $extension;
-            $filePath = 'parent-audio/' . $fileName;
-            
-            Storage::disk('public')->put($filePath, $audioData);
-
-            // Create new audio record
-            $parentAudio = ParentAudio::create([
-                'parent_id' => $parentId,
-                'word_id' => $wordId,
-                'difficulty' => $difficulty,
-                'audio_file_path' => $filePath,
-                'audio_file_name' => $fileName,
-                'duration_seconds' => $request->duration_seconds ?? null,
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'data' => $parentAudio,
-                'message' => 'Audio uploaded successfully'
-            ]);
-        } else {
-            // Original file upload logic
-            $request->validate([
-                'word_id' => 'required|exists:words,id',
-                'difficulty' => 'required|in:easy,normal,hard',
-                'audio_file' => 'required|file|mimes:mp3,wav,m4a|max:10240', // 10MB max
-            ]);
-
-            $parentId = Auth::id();
-            $wordId = $request->word_id;
-            $difficulty = $request->difficulty;
-
-            // Check if audio already exists for this parent/word/difficulty
-            $existingAudio = ParentAudio::where('parent_id', $parentId)
-                ->where('word_id', $wordId)
-                ->where('difficulty', $difficulty)
-                ->first();
-
-            if ($existingAudio) {
-                // Delete old audio file
-                Storage::disk('public')->delete($existingAudio->audio_file_path);
-                $existingAudio->delete();
-            }
-
-            // Store the audio file
-            $audioFile = $request->file('audio_file');
-            $fileName = Str::uuid() . '.' . $audioFile->getClientOriginalExtension();
-            $filePath = 'parent-audio/' . $fileName;
-            
-            Storage::disk('public')->put($filePath, file_get_contents($audioFile));
-
-            // Create new audio record
-            $parentAudio = ParentAudio::create([
-                'parent_id' => $parentId,
-                'word_id' => $wordId,
-                'difficulty' => $difficulty,
-                'audio_file_path' => $filePath,
-                'audio_file_name' => $fileName,
-                'duration_seconds' => $request->duration_seconds ?? null,
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'data' => $parentAudio,
-                'message' => 'Audio uploaded successfully'
-            ]);
+        if ($existingAudio) {
+            // Delete old audio file
+            Storage::disk('public')->delete($existingAudio->audio_file_path);
+            $existingAudio->delete();
         }
+
+        // Store the audio file directly
+        $audioFile = $request->file('audio_file');
+        $fileName = Str::uuid() . '.' . $audioFile->getClientOriginalExtension();
+        $filePath = 'parent-audio/' . $fileName;
+        
+        // Store the file using Laravel's file handling
+        $audioFile->storeAs('parent-audio', $fileName, 'public');
+
+        // Create new audio record
+        $parentAudio = ParentAudio::create([
+            'parent_id' => $parentId,
+            'word_id' => $wordId,
+            'difficulty' => $difficulty,
+            'audio_file_path' => $filePath,
+            'audio_file_name' => $fileName,
+            'duration_seconds' => $request->duration_seconds ?? null,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => $parentAudio,
+            'message' => 'Audio uploaded successfully'
+        ]);
     }
 
     public function getForChildren(Request $request, $wordId): JsonResponse
