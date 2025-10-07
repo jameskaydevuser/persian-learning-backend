@@ -103,3 +103,17 @@ Route::get('/debug/users', function() {
 Route::get('/debug/parent-audio', function() {
     return response()->json(App\Models\ParentAudio::with(['parent', 'word'])->get());
 });
+
+// Test audio route - simple file serving
+Route::get('/test-audio', function() {
+    $testFile = storage_path('app/public/parent-audio/31b919f4-b5eb-410f-9810-bac77eef5f69.mp3');
+    
+    if (!file_exists($testFile)) {
+        return response()->json(['error' => 'File not found', 'path' => $testFile], 404);
+    }
+    
+    return response()->file($testFile, [
+        'Content-Type' => 'audio/mpeg',
+        'Accept-Ranges' => 'bytes',
+    ]);
+});
