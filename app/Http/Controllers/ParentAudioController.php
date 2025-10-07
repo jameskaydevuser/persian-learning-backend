@@ -40,29 +40,34 @@ class ParentAudioController extends Controller
             }
 
             // Decode base64 and store the audio file
-            $audioData = base64_decode($request->audio_base64);
+            $base64Data = $request->audio_base64;
             
-            // Ensure proper WAV header if it's missing
-            // WAV files start with 'RIFF'
-            if (substr($audioData, 0, 4) !== 'RIFF') {
-                // If no WAV header, add a basic one
-                // This is a simplified WAV header for mono, 16-bit, 44100Hz
-                $sampleRate = 44100;
-                $bitsPerSample = 16;
-                $numChannels = 1;
-                $dataSize = strlen($audioData);
-                $byteRate = $sampleRate * $numChannels * ($bitsPerSample / 8);
-                $blockAlign = $numChannels * ($bitsPerSample / 8);
-                
-                $header = pack('a4Va4', 'RIFF', 36 + $dataSize, 'WAVE');
-                $header .= pack('a4V', 'fmt ', 16);
-                $header .= pack('vvVVvv', 1, $numChannels, $sampleRate, $byteRate, $blockAlign, $bitsPerSample);
-                $header .= pack('a4V', 'data', $dataSize);
-                
-                $audioData = $header . $audioData;
+            // Remove data URL prefix if present
+            if (strpos($base64Data, 'data:') === 0) {
+                $base64Data = substr($base64Data, strpos($base64Data, ',') + 1);
             }
             
-            $fileName = Str::uuid() . '.wav';
+            $audioData = base64_decode($base64Data);
+            
+            \Log::info('Audio data info', [
+                'base64_length' => strlen($request->audio_base64),
+                'decoded_length' => strlen($audioData),
+                'first_4_bytes' => bin2hex(substr($audioData, 0, 4)),
+                'is_wav' => substr($audioData, 0, 4) === 'RIFF'
+            ]);
+            
+            // Don't manipulate the audio data - store it as-is
+            // The client should send properly formatted audio
+            
+            // Determine file extension based on actual format
+            $extension = 'wav'; // Default
+            if (substr($audioData, 0, 4) === 'RIFF') {
+                $extension = 'wav';
+            } elseif (substr($audioData, 0, 3) === 'ID3' || substr($audioData, 0, 2) === "\xFF\xFB") {
+                $extension = 'mp3';
+            }
+            
+            $fileName = Str::uuid() . '.' . $extension;
             $filePath = 'parent-audio/' . $fileName;
             
             Storage::disk('public')->put($filePath, $audioData);
