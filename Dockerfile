@@ -33,6 +33,7 @@ RUN composer install --optimize-autoloader
 # Create SQLite database directory and set permissions
 RUN mkdir -p /opt/render/project/src/database && \
     touch /opt/render/project/src/database/database.sqlite && \
+    mkdir -p /opt/render/project/src/storage/app/public/parent-audio && \
     chmod -R 777 /opt/render/project/src/storage && \
     chmod -R 777 /opt/render/project/src/bootstrap/cache && \
     chmod -R 777 /opt/render/project/src/database && \
@@ -44,7 +45,9 @@ EXPOSE $PORT
 # Start server
 CMD mkdir -p /opt/render/project/src/database && \
     touch /opt/render/project/src/database/database.sqlite && \
+    mkdir -p /opt/render/project/src/storage/app/public/parent-audio && \
     chmod -R 777 /opt/render/project/src/database && \
+    chmod -R 777 /opt/render/project/src/storage && \
     php artisan migrate:fresh --force && \
     php artisan db:seed --force && \
     php artisan storage:link && \

@@ -156,12 +156,10 @@ class ParentAudioController extends Controller
         \Log::info('Stream audio request received', ['filename' => $filename]);
         
         $filePath = 'parent-audio/' . $filename;
-        $fullPath = storage_path('app/public/' . $filePath);
         
-        \Log::info('File path', ['fullPath' => $fullPath, 'exists' => file_exists($fullPath)]);
-        
-        if (!file_exists($fullPath)) {
-            \Log::error('Audio file not found', ['fullPath' => $fullPath]);
+        // Check if file exists using Storage facade
+        if (!\Storage::disk('public')->exists($filePath)) {
+            \Log::error('Audio file not found', ['filePath' => $filePath]);
             return response()->json([
                 'success' => false,
                 'message' => 'Audio file not found'
@@ -180,15 +178,17 @@ class ParentAudioController extends Controller
         
         \Log::info('Streaming audio file', ['contentType' => $contentType, 'extension' => $extension]);
         
-        // Try using Storage facade to serve the file
-        return response()->stream(function() use ($fullPath) {
-            $file = fopen($fullPath, 'rb');
-            fpassthru($file);
-            fclose($file);
-        }, 200, [
-            'Content-Type' => $contentType,
-            'Accept-Ranges' => 'bytes',
-            'Cache-Control' => 'public, max-age=3600',
-        ]);
+        // Approach 5: Using raw PHP file serving
+        $fullPath = storage_path('app/public/' . $filePath);
+        
+        // Set headers manually
+        header('Content-Type: ' . $contentType);
+        header('Content-Length: ' . filesize($fullPath));
+        header('Accept-Ranges: bytes');
+        header('Cache-Control: public, max-age=3600');
+        
+        // Read and output file
+        readfile($fullPath);
+        exit;
     }
 }
