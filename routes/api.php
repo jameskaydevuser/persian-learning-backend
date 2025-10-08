@@ -102,3 +102,8 @@ Route::get('/debug/users', function() {
 Route::get('/debug/parent-audio', function() {
     return response()->json(App\Models\ParentAudio::with(['parent', 'word'])->get());
 });
+
+// Test route to see if API is working
+Route::get('/test-api', function() {
+    return response()->json(['message' => 'API is working', 'timestamp' => now()]);
+});
